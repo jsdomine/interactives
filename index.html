@@ -72,7 +72,6 @@
     <a href="./viz-failure.html"><div class="button">Visualization 1</div></a>
     <a href="./viz2.html"><div class="button">Visualization 2</div></a>
     <a href="./viz3.html"><div class="button">Visualization 3</div></a>
-    <!-- Add more buttons/links as needed -->
   </div>
 
   <script>
@@ -82,6 +81,9 @@
     canvas.height = window.innerHeight;
 
     const shapes = [];
+    const sparks = [];
+    const mouse = { x: null, y: null };
+    const symbols = ['\u03C0', '\u03A3', '\u2211', '\u221E', '+', '-', '\u00D7', '\u00F7', '=', '\u2260', '\u2264', '\u2265'];
 
     function random(min, max) {
       return Math.random() * (max - min) + min;
@@ -89,12 +91,15 @@
 
     function createShape() {
       const shape = {
-        x: random(0, canvas.width),
-        y: random(0, canvas.height),
-        dx: random(-1, 1),
-        dy: random(-1, 1),
-        radius: random(10, 30),
-        sides: Math.floor(random(3, 8))
+        x: random(100, canvas.width - 100),
+        y: random(100, canvas.height - 100),
+        dx: random(-2, 2),
+        dy: random(-2, 2),
+        radius: random(20, 40),
+        sides: Math.floor(random(3, 8)),
+        angle: random(0, Math.PI * 2),
+        angularVelocity: random(-0.05, 0.05),
+        mass: 1
       };
       shapes.push(shape);
     }
@@ -104,34 +109,132 @@
     }
 
     function drawShape(shape) {
-      const angle = (2 * Math.PI) / shape.sides;
+      const angleStep = (2 * Math.PI) / shape.sides;
+      ctx.save();
+      ctx.translate(shape.x, shape.y);
+      ctx.rotate(shape.angle);
       ctx.beginPath();
       for (let i = 0; i < shape.sides; i++) {
-        const x = shape.x + shape.radius * Math.cos(i * angle);
-        const y = shape.y + shape.radius * Math.sin(i * angle);
+        const x = shape.radius * Math.cos(i * angleStep);
+        const y = shape.radius * Math.sin(i * angleStep);
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
       ctx.stroke();
+      ctx.restore();
+    }
+
+    function createSparks(x, y) {
+      const count = Math.floor(random(5, 10));
+      for (let i = 0; i < count; i++) {
+        sparks.push({
+          x,
+          y,
+          dx: random(-2, 2),
+          dy: random(-2, 2),
+          life: 1,
+          symbol: symbols[Math.floor(Math.random() * symbols.length)]
+        });
+      }
+    }
+
+    function drawSparks() {
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        const s = sparks[i];
+        ctx.save();
+        ctx.globalAlpha = s.life;
+        ctx.font = `${20 * s.life}px STIX Two Text`;
+        ctx.fillStyle = 'white';
+        ctx.fillText(s.symbol, s.x, s.y);
+        ctx.restore();
+
+        s.x += s.dx;
+        s.y += s.dy;
+        s.life -= 0.02;
+
+        if (s.life <= 0) sparks.splice(i, 1);
+      }
+    }
+
+    function repelFromMouse(shape) {
+      if (mouse.x === null || mouse.y === null) return;
+      const dx = shape.x - mouse.x;
+      const dy = shape.y - mouse.y;
+      const distSq = dx * dx + dy * dy;
+      const dist = Math.sqrt(distSq);
+      const force = 10000 / (distSq + 100);
+      if (dist < 200) {
+        shape.dx += (dx / dist) * force;
+        shape.dy += (dy / dist) * force;
+      }
+    }
+
+    function applyDamping(shape) {
+      shape.dx *= 0.98;
+      shape.dy *= 0.98;
+      shape.angularVelocity *= 0.98;
+    }
+
+    function resolveCollisions() {
+      for (let i = 0; i < shapes.length; i++) {
+        for (let j = i + 1; j < shapes.length; j++) {
+          const a = shapes[i];
+          const b = shapes[j];
+          const dx = b.x - a.x;
+          const dy = b.y - a.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < a.radius + b.radius) {
+            const overlap = 0.5 * (a.radius + b.radius - dist);
+            const nx = dx / dist;
+            const ny = dy / dist;
+            a.x -= nx * overlap;
+            a.y -= ny * overlap;
+            b.x += nx * overlap;
+            b.y += ny * overlap;
+
+            const kx = a.dx - b.dx;
+            const ky = a.dy - b.dy;
+            const p = 2 * (nx * kx + ny * ky) / (a.mass + b.mass);
+            a.dx -= p * b.mass * nx;
+            a.dy -= p * b.mass * ny;
+            b.dx += p * a.mass * nx;
+            b.dy += p * a.mass * ny;
+
+            createSparks((a.x + b.x) / 2, (a.y + b.y) / 2);
+          }
+        }
+      }
     }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      resolveCollisions();
+
       for (const shape of shapes) {
+        repelFromMouse(shape);
+
         shape.x += shape.dx;
         shape.y += shape.dy;
+        shape.angle += shape.angularVelocity;
 
         if (shape.x - shape.radius < 0 || shape.x + shape.radius > canvas.width) {
           shape.dx *= -1;
+          shape.x = Math.max(shape.radius, Math.min(canvas.width - shape.radius, shape.x));
         }
         if (shape.y - shape.radius < 0 || shape.y + shape.radius > canvas.height) {
           shape.dy *= -1;
+          shape.y = Math.max(shape.radius, Math.min(canvas.height - shape.radius, shape.y));
         }
 
+        applyDamping(shape);
         drawShape(shape);
       }
+
+      drawSparks();
+
       requestAnimationFrame(animate);
     }
 
@@ -141,9 +244,15 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     });
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+    });
   </script>
 </body>
 </html>
+
 
 
 
