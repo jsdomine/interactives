@@ -6,21 +6,31 @@
   <title>Visualizations by J. Domine</title>
   <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text&display=swap" rel="stylesheet">
   <style>
-    body {
+    html, body {
       margin: 0;
       padding: 0;
+      height: 100%;
       font-family: 'STIX Two Text', serif;
       background-color: #0e0e0e;
-      overflow: hidden;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+    .content {
+      position: relative;
+      z-index: 1;
+      padding: 2rem;
+      max-width: 600px;
+      margin: 0 auto;
     }
     h1 {
-      margin-bottom: 2rem;
       font-weight: 400;
       font-size: 2rem;
       letter-spacing: 1px;
@@ -31,11 +41,19 @@
     .math-title span {
       font-family: 'STIX Two Text', serif;
     }
+    .button-groups {
+      margin-top: 2rem;
+    }
+    .button-subgroup {
+      margin-bottom: 2rem;
+    }
+    .button-subgroup h2 {
+      margin-bottom: 1rem;
+    }
     .button-container {
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      z-index: 1;
     }
     .button-container a {
       text-decoration: none;
@@ -55,25 +73,28 @@
       background-color: rgba(255, 255, 255, 0.2);
       transform: scale(1.05);
     }
-    canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: 0;
-    }
   </style>
 </head>
 <body>
   <canvas id="geometryCanvas"></canvas>
-  <h1 class="math-title">Viѕυαℓizατionѕ by J. Dοminɛ</h1>
-  <div class="button-container">
-    <a href="./viz1.html"><div class="button">Visualization 1</div></a>
-    <a href="./viz2.html"><div class="button">Visualization 2</div></a>
-    <a href="./viz3.html"><div class="button">Visualization 3</div></a>
+  <div class="content">
+    <h1 class="math-title">Viѕυαℓizατionѕ by J. Dοminɛ</h1>
+    <div class="button-groups">
+      <div class="button-subgroup">
+        <h2>Category A</h2>
+        <div class="button-container">
+          <a href="./viz1.html"><div class="button">Visualization 1</div></a>
+          <a href="./viz2.html"><div class="button">Visualization 2</div></a>
+        </div>
+      </div>
+      <div class="button-subgroup">
+        <h2>Category B</h2>
+        <div class="button-container">
+          <a href="./viz3.html"><div class="button">Visualization 3</div></a>
+        </div>
+      </div>
+    </div>
   </div>
-
   <script>
     const canvas = document.getElementById('geometryCanvas');
     const ctx = canvas.getContext('2d');
@@ -110,6 +131,8 @@
 
     function drawShape(shape) {
       const angleStep = (2 * Math.PI) / shape.sides;
+      const speed = Math.sqrt(shape.dx * shape.dx + shape.dy * shape.dy);
+      const lightness = Math.min(100, 30 + speed * 20);
       ctx.save();
       ctx.translate(shape.x, shape.y);
       ctx.rotate(shape.angle);
@@ -121,7 +144,7 @@
         else ctx.lineTo(x, y);
       }
       ctx.closePath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.strokeStyle = `hsl(0, 0%, ${lightness}%)`;
       ctx.stroke();
       ctx.restore();
     }
@@ -142,20 +165,6 @@
         });
       }
     }
-    // function createSparks(x, y) {
-    //   const count = Math.floor(random(1, 6));
-    //   for (let i = 0; i < count; i++) {
-    //     sparks.push({
-    //       x,
-    //       y,
-    //       dx: random(-2, 2),
-    //       dy: random(-2, 2),
-    //       life: 1,
-    //       decay: 1 / random(30, 75),
-    //       symbol: symbols[Math.floor(Math.random() * symbols.length)]
-    //     });
-    //   }
-    // }
 
     function drawSparks() {
       for (let i = sparks.length - 1; i >= 0; i--) {
@@ -182,7 +191,7 @@
       const distSq = dx * dx + dy * dy;
       const dist = Math.sqrt(distSq);
       const force = 10000 / (distSq + 100);
-      if (dist < 200) {
+      if (dist < 50) {
         shape.dx += (dx / dist) * force;
         shape.dy += (dy / dist) * force;
       }
@@ -191,12 +200,12 @@
     function applyDamping(shape) {
       const speed = Math.sqrt(shape.dx * shape.dx + shape.dy * shape.dy);
       const angularSpeed = Math.abs(shape.angularVelocity);
-      if (speed > 0.1) {
-        shape.dx *= 0.98;
-        shape.dy *= 0.98;
+      if (speed > 1.0) {
+        shape.dx *= 0.995;
+        shape.dy *= 0.995;
       }
-      if (angularSpeed > 0.01) {
-        shape.angularVelocity *= 0.98;
+      if (angularSpeed > 0.001) {
+        shape.angularVelocity *= 0.995;
       }
     }
 
@@ -226,60 +235,24 @@
             b.dx += p * a.mass * nx;
             b.dy += p * a.mass * ny;
 
-            // Angular velocity update based on collision strength
-            const torque = 0.05 * relVel; // scale factor for angular effect
+            const torque = 0.05 * relVel;
             a.angularVelocity += (Math.random() - 0.5) * torque;
             b.angularVelocity += (Math.random() - 0.5) * torque;
 
-            // Emit sparks proportional to collision strength
             createSparks((a.x + b.x) / 2, (a.y + b.y) / 2, Math.min(relVel / 5, 1));
           }
         }
       }
     }
-    // function resolveCollisions() {
-    //   for (let i = 0; i < shapes.length; i++) {
-    //     for (let j = i + 1; j < shapes.length; j++) {
-    //       const a = shapes[i];
-    //       const b = shapes[j];
-    //       const dx = b.x - a.x;
-    //       const dy = b.y - a.y;
-    //       const dist = Math.sqrt(dx * dx + dy * dy);
-    //       if (dist < a.radius + b.radius) {
-    //         const overlap = 0.5 * (a.radius + b.radius - dist);
-    //         const nx = dx / dist;
-    //         const ny = dy / dist;
-    //         a.x -= nx * overlap;
-    //         a.y -= ny * overlap;
-    //         b.x += nx * overlap;
-    //         b.y += ny * overlap;
-
-    //         const kx = a.dx - b.dx;
-    //         const ky = a.dy - b.dy;
-    //         const p = 2 * (nx * kx + ny * ky) / (a.mass + b.mass);
-    //         a.dx -= p * b.mass * nx;
-    //         a.dy -= p * b.mass * ny;
-    //         b.dx += p * a.mass * nx;
-    //         b.dy += p * a.mass * ny;
-
-    //         createSparks((a.x + b.x) / 2, (a.y + b.y) / 2);
-    //       }
-    //     }
-    //   }
-    // }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
       resolveCollisions();
-
       for (const shape of shapes) {
         repelFromMouse(shape);
-
         shape.x += shape.dx;
         shape.y += shape.dy;
         shape.angle += shape.angularVelocity;
-
         if (shape.x - shape.radius < 0 || shape.x + shape.radius > canvas.width) {
           shape.dx *= -1;
           shape.x = Math.max(shape.radius, Math.min(canvas.width - shape.radius, shape.x));
@@ -288,13 +261,10 @@
           shape.dy *= -1;
           shape.y = Math.max(shape.radius, Math.min(canvas.height - shape.radius, shape.y));
         }
-
         applyDamping(shape);
         drawShape(shape);
       }
-
       drawSparks();
-
       requestAnimationFrame(animate);
     }
 
@@ -312,62 +282,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visualizations by J. Domine</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
-    h1 {
-      margin-bottom: 2rem;
-      font-weight: 400;
-    }
-    .button-container {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-    .button-container a {
-      text-decoration: none;
-    }
-    .button {
-      padding: 0.75rem 1.5rem;
-      background-color: #222;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      text-align: center;
-      transition: background-color 0.2s;
-    }
-    .button:hover {
-      background-color: #444;
-    }
-  </style>
-</head>
-<body>
-  <h1>Visualizations by J. Domine</h1>
-  <div class="button-container">
-    <a href="./viz-failure.html"><div class="button">Simulation Failure</div></a>
-    <a href="./viz2.html"><div class="button">Visualization 2</div></a>
-    <a href="./viz3.html"><div class="button">Visualization 3</div></a>
-    <!-- Add more buttons/links as needed -->
-<!--   </div>
-</body>
-</html> -->
