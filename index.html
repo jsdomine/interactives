@@ -126,8 +126,10 @@
       ctx.restore();
     }
 
-    function createSparks(x, y) {
-      const count = Math.floor(random(1, 6));
+    function createSparks(x, y, intensity = 1) {
+      const minCount = 1;
+      const maxCount = 5;
+      const count = Math.floor(minCount + (maxCount - minCount) * Math.min(intensity, 1));
       for (let i = 0; i < count; i++) {
         sparks.push({
           x,
@@ -140,6 +142,20 @@
         });
       }
     }
+    // function createSparks(x, y) {
+    //   const count = Math.floor(random(1, 6));
+    //   for (let i = 0; i < count; i++) {
+    //     sparks.push({
+    //       x,
+    //       y,
+    //       dx: random(-2, 2),
+    //       dy: random(-2, 2),
+    //       life: 1,
+    //       decay: 1 / random(30, 75),
+    //       symbol: symbols[Math.floor(Math.random() * symbols.length)]
+    //     });
+    //   }
+    // }
 
     function drawSparks() {
       for (let i = sparks.length - 1; i >= 0; i--) {
@@ -203,17 +219,54 @@
 
             const kx = a.dx - b.dx;
             const ky = a.dy - b.dy;
+            const relVel = Math.sqrt(kx * kx + ky * ky);
             const p = 2 * (nx * kx + ny * ky) / (a.mass + b.mass);
             a.dx -= p * b.mass * nx;
             a.dy -= p * b.mass * ny;
             b.dx += p * a.mass * nx;
             b.dy += p * a.mass * ny;
 
-            createSparks((a.x + b.x) / 2, (a.y + b.y) / 2);
+            // Angular velocity update based on collision strength
+            const torque = 0.05 * relVel; // scale factor for angular effect
+            a.angularVelocity += (Math.random() - 0.5) * torque;
+            b.angularVelocity += (Math.random() - 0.5) * torque;
+
+            // Emit sparks proportional to collision strength
+            createSparks((a.x + b.x) / 2, (a.y + b.y) / 2, Math.min(relVel / 5, 1));
           }
         }
       }
     }
+    // function resolveCollisions() {
+    //   for (let i = 0; i < shapes.length; i++) {
+    //     for (let j = i + 1; j < shapes.length; j++) {
+    //       const a = shapes[i];
+    //       const b = shapes[j];
+    //       const dx = b.x - a.x;
+    //       const dy = b.y - a.y;
+    //       const dist = Math.sqrt(dx * dx + dy * dy);
+    //       if (dist < a.radius + b.radius) {
+    //         const overlap = 0.5 * (a.radius + b.radius - dist);
+    //         const nx = dx / dist;
+    //         const ny = dy / dist;
+    //         a.x -= nx * overlap;
+    //         a.y -= ny * overlap;
+    //         b.x += nx * overlap;
+    //         b.y += ny * overlap;
+
+    //         const kx = a.dx - b.dx;
+    //         const ky = a.dy - b.dy;
+    //         const p = 2 * (nx * kx + ny * ky) / (a.mass + b.mass);
+    //         a.dx -= p * b.mass * nx;
+    //         a.dy -= p * b.mass * ny;
+    //         b.dx += p * a.mass * nx;
+    //         b.dy += p * a.mass * ny;
+
+    //         createSparks((a.x + b.x) / 2, (a.y + b.y) / 2);
+    //       }
+    //     }
+    //   }
+    // }
 
     function animate() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
