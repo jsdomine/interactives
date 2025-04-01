@@ -125,7 +125,8 @@
       shapes.push(shape);
     }
 
-    for (let i = 0; i < 25; i++) {
+    const maxShapes = /Mobi|Android/i.test(navigator.userAgent) ? 15 : 30;
+    for (let i = 0; i < maxShapes; i++) {
       createShape();
     }
 
@@ -149,11 +150,13 @@
       ctx.restore();
     }
 
+    const maxSparks = /Mobi|Android/i.test(navigator.userAgent) ? 25 : 75;
     function createSparks(x, y, intensity = 1) {
       const minCount = 1;
       const maxCount = 5;
       const count = Math.floor(minCount + (maxCount - minCount) * Math.min(intensity, 1));
       for (let i = 0; i < count; i++) {
+        if (sparks.length >= maxSparks) break;
         sparks.push({
           x,
           y,
@@ -165,6 +168,22 @@
         });
       }
     }
+    // function createSparks(x, y, intensity = 1) {
+    //   const minCount = 1;
+    //   const maxCount = 5;
+    //   const count = Math.floor(minCount + (maxCount - minCount) * Math.min(intensity, 1));
+    //   for (let i = 0; i < count; i++) {
+    //     sparks.push({
+    //       x,
+    //       y,
+    //       dx: random(-2, 2),
+    //       dy: random(-2, 2),
+    //       life: 1,
+    //       decay: 1 / random(30, 75),
+    //       symbol: symbols[Math.floor(Math.random() * symbols.length)]
+    //     });
+    //   }
+    // }
 
     function drawSparks() {
       for (let i = sparks.length - 1; i >= 0; i--) {
