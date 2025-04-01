@@ -4,6 +4,155 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Visualizations by J. Domine</title>
+  <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'STIX Two Text', serif;
+      background-color: #0e0e0e;
+      overflow: hidden;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    h1 {
+      margin-bottom: 2rem;
+      font-weight: 400;
+      font-size: 2rem;
+      letter-spacing: 1px;
+    }
+    .math-title {
+      font-size: 2.5rem;
+    }
+    .math-title span {
+      font-family: 'STIX Two Text', serif;
+    }
+    .button-container {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 1;
+    }
+    .button-container a {
+      text-decoration: none;
+    }
+    .button {
+      padding: 0.75rem 1.5rem;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      transition: background-color 0.2s, transform 0.2s;
+      backdrop-filter: blur(4px);
+    }
+    .button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: scale(1.05);
+    }
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="geometryCanvas"></canvas>
+  <h1 class="math-title">Viѕυαℓizατιoиѕ by J. Dοмииe</h1>
+  <div class="button-container">
+    <a href="./viz-failure.html"><div class="button">Visualization 1</div></a>
+    <a href="./viz2.html"><div class="button">Visualization 2</div></a>
+    <a href="./viz3.html"><div class="button">Visualization 3</div></a>
+    <!-- Add more buttons/links as needed -->
+  </div>
+
+  <script>
+    const canvas = document.getElementById('geometryCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const shapes = [];
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function createShape() {
+      const shape = {
+        x: random(0, canvas.width),
+        y: random(0, canvas.height),
+        dx: random(-1, 1),
+        dy: random(-1, 1),
+        radius: random(10, 30),
+        sides: Math.floor(random(3, 8))
+      };
+      shapes.push(shape);
+    }
+
+    for (let i = 0; i < 25; i++) {
+      createShape();
+    }
+
+    function drawShape(shape) {
+      const angle = (2 * Math.PI) / shape.sides;
+      ctx.beginPath();
+      for (let i = 0; i < shape.sides; i++) {
+        const x = shape.x + shape.radius * Math.cos(i * angle);
+        const y = shape.y + shape.radius * Math.sin(i * angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+      ctx.stroke();
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const shape of shapes) {
+        shape.x += shape.dx;
+        shape.y += shape.dy;
+
+        if (shape.x - shape.radius < 0 || shape.x + shape.radius > canvas.width) {
+          shape.dx *= -1;
+        }
+        if (shape.y - shape.radius < 0 || shape.y + shape.radius > canvas.height) {
+          shape.dy *= -1;
+        }
+
+        drawShape(shape);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
+
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizations by J. Domine</title>
   <style>
     body {
       margin: 0;
@@ -50,6 +199,6 @@
     <a href="./viz2.html"><div class="button">Visualization 2</div></a>
     <a href="./viz3.html"><div class="button">Visualization 3</div></a>
     <!-- Add more buttons/links as needed -->
-  </div>
+<!--   </div>
 </body>
-</html>
+</html> -->
