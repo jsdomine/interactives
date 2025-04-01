@@ -69,7 +69,7 @@
   <canvas id="geometryCanvas"></canvas>
   <h1 class="math-title">Viѕυαℓizατionѕ by J. Dοminɛ</h1>
   <div class="button-container">
-    <a href="./viz-failure.html"><div class="button">Visualization 1</div></a>
+    <a href="./viz1.html"><div class="button">Visualization 1</div></a>
     <a href="./viz2.html"><div class="button">Visualization 2</div></a>
     <a href="./viz3.html"><div class="button">Visualization 3</div></a>
   </div>
@@ -127,7 +127,7 @@
     }
 
     function createSparks(x, y) {
-      const count = Math.floor(random(5, 10));
+      const count = Math.floor(random(1, 6));
       for (let i = 0; i < count; i++) {
         sparks.push({
           x,
@@ -135,6 +135,7 @@
           dx: random(-2, 2),
           dy: random(-2, 2),
           life: 1,
+          decay: 1 / random(30, 75),
           symbol: symbols[Math.floor(Math.random() * symbols.length)]
         });
       }
@@ -152,7 +153,7 @@
 
         s.x += s.dx;
         s.y += s.dy;
-        s.life -= 0.02;
+        s.life -= s.decay;
 
         if (s.life <= 0) sparks.splice(i, 1);
       }
@@ -172,9 +173,15 @@
     }
 
     function applyDamping(shape) {
-      shape.dx *= 0.98;
-      shape.dy *= 0.98;
-      shape.angularVelocity *= 0.98;
+      const speed = Math.sqrt(shape.dx * shape.dx + shape.dy * shape.dy);
+      const angularSpeed = Math.abs(shape.angularVelocity);
+      if (speed > 0.1) {
+        shape.dx *= 0.98;
+        shape.dy *= 0.98;
+      }
+      if (angularSpeed > 0.01) {
+        shape.angularVelocity *= 0.98;
+      }
     }
 
     function resolveCollisions() {
